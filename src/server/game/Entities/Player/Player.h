@@ -914,7 +914,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         static bool BuildEnumData(PreparedQueryResult result, WorldPacket* data);
 
-        bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, SpellEffectInfo const& spellEffectInfo, WorldObject const* caster) const override;
+        bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, SpellEffectInfo const& spellEffectInfo, WorldObject const* caster, bool requireImmunityPurgesEffectAttribute = false) const override;
 
         bool IsFalling() { return GetPositionZ() < m_lastFallZ; }
         bool IsInAreaTriggerRadius(AreaTriggerEntry const* trigger) const;
@@ -1691,7 +1691,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         void SendMessageToSet(WorldPacket const* data, bool self) const override { SendMessageToSetInRange(data, GetVisibilityRange(), self); }
         void SendMessageToSetInRange(WorldPacket const* data, float dist, bool self) const override;
-        void SendMessageToSetInRange(WorldPacket const* data, float dist, bool self, bool own_team_only) const;
+        void SendMessageToSetInRange(WorldPacket const* data, float dist, bool self, bool own_team_only, bool required3dDist = false) const;
         void SendMessageToSet(WorldPacket const* data, Player const* skipped_rcvr) const override;
 
         Corpse* GetCorpse() const;

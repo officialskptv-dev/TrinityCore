@@ -1235,6 +1235,7 @@ void Guild::HandleRoster(WorldSession* session)
 {
     WorldPackets::Guild::GuildRoster roster;
 
+    roster.RankData.reserve(m_ranks.size());
     for (RankInfo const& rank : m_ranks)
     {
         WorldPackets::Guild::GuildRankData& rankData =  roster.RankData.emplace_back();
@@ -1249,6 +1250,7 @@ void Guild::HandleRoster(WorldSession* session)
     }
 
     bool sendOfficerNote = _HasRankRight(session->GetPlayer(), GR_RIGHT_VIEWOFFNOTE);
+    roster.MemberData.reserve(m_members.size());
     for (auto const& [guid, member] : m_members)
     {
         WorldPackets::Guild::GuildRosterMemberData& memberData = roster.MemberData.emplace_back();
@@ -2895,6 +2897,8 @@ void Guild::_SendBankList(WorldSession* session /* = nullptr*/, uint8 tabId /*= 
 
                     itemInfo.Slot = *itr;
                     itemInfo.ItemID = tabItem->GetEntry();
+                    itemInfo.RandomPropertiesID = tabItem->GetItemRandomPropertyId();
+                    itemInfo.RandomPropertiesSeed = tabItem->GetItemSuffixFactor();
                     itemInfo.Count = int32(tabItem->GetCount());
                     itemInfo.Charges = int32(abs(tabItem->GetSpellCharges()));
                     itemInfo.EnchantmentID = int32(tabItem->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));

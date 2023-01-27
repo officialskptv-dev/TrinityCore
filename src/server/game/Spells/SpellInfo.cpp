@@ -2855,13 +2855,26 @@ void SpellInfo::ApplyAllSpellImmunitiesTo(Unit* target, uint8 effIndex, bool app
             if (mechanicImmunity & (1 << i))
                 target->ApplySpellImmune(Id, IMMUNITY_MECHANIC, i, apply);
 
-        if (apply && HasAttribute(SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY))
+        if (HasAttribute(SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY))
         {
-            // exception for purely snare mechanic (eg. hands of freedom)!
-            if (mechanicImmunity == (1 << MECHANIC_SNARE))
-                target->RemoveMovementImpairingAuras(false);
-            else
+            if (apply)
                 target->RemoveAurasWithMechanic(mechanicImmunity, AURA_REMOVE_BY_DEFAULT, Id);
+            else
+            {
+                std::vector<Aura*> aurasToUpdateTargets;
+                target->RemoveAppliedAuras([mechanicImmunity, &aurasToUpdateTargets](AuraApplication const* aurApp)
+                {
+                    Aura* aura = aurApp->GetBase();
+                    if (aura->GetSpellInfo()->GetAllEffectsMechanicMask() & mechanicImmunity)
+                        aurasToUpdateTargets.push_back(aura);
+
+                    // only update targets, don't remove anything
+                    return false;
+                });
+
+                for (Aura* aura : aurasToUpdateTargets)
+                    aura->UpdateTargetMap(aura->GetCaster());
+            }
         }
     }
 
@@ -2889,7 +2902,11 @@ void SpellInfo::ApplyAllSpellImmunitiesTo(Unit* target, uint8 effIndex, bool app
     {
         target->ApplySpellImmune(Id, IMMUNITY_STATE, auraType, apply);
         if (apply && HasAttribute(SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY))
-            target->RemoveAurasByType(auraType);
+            target->RemoveAurasByType(auraType, [](AuraApplication const* aurApp) -> bool
+            {
+                // if the aura has SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY, then it cannot be removed by immunity
+                return !aurApp->GetBase()->GetSpellInfo()->HasAttribute(SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY);
+            });
     }
 
     for (SpellEffects effectType : immuneInfo.SpellEffectImmune)

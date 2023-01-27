@@ -2197,19 +2197,12 @@ void SpellMgr::LoadPetLevelupSpellMap()
             if (!creatureFamily->SkillLine[j])
                 continue;
 
-            for (uint32 k = 0; k < sSkillLineAbilityStore.GetNumRows(); ++k)
+            std::vector<SkillLineAbilityEntry const*> const* skillLineAbilities = GetSkillLineAbilitiesBySkill(creatureFamily->SkillLine[j]);
+            if (!skillLineAbilities)
+                continue;
+
+            for (SkillLineAbilityEntry const* skillLine : *skillLineAbilities)
             {
-                SkillLineAbilityEntry const* skillLine = sSkillLineAbilityStore.LookupEntry(k);
-                if (!skillLine)
-                    continue;
-
-                //if (skillLine->skillId != creatureFamily->SkillLine[0] &&
-                //    (!creatureFamily->SkillLine[1] || skillLine->skillId != creatureFamily->SkillLine[1]))
-                //    continue;
-
-                if (skillLine->SkillLine != creatureFamily->SkillLine[j])
-                    continue;
-
                 if (skillLine->AcquireMethod != SKILL_LINE_ABILITY_LEARNED_ON_SKILL_LEARN)
                     continue;
 
@@ -3081,12 +3074,6 @@ void SpellMgr::LoadSpellInfoCorrections()
         {
             spellInfo->_GetEffect(EFFECT_1).TriggerSpell = 46737;
         });
-
-        // Lich Pet
-        ApplySpellFix({ 70050 }, [](SpellInfo* spellInfo)
-        {
-            spellInfo->_GetEffect(EFFECT_0).TriggerSpell = 70049;
-        });
     }
 
     // Allows those to crit
@@ -3156,6 +3143,16 @@ void SpellMgr::LoadSpellInfoCorrections()
         spellInfo->_GetEffect(EFFECT_0).TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
     });
 
+    // Warsong Gulch Anti-Stall Debuffs
+    ApplySpellFix({
+        46392, // Focused Assault
+        46393, // Brutal Assault
+    }, [](SpellInfo* spellInfo)
+    {
+        // due to discrepancies between ranks
+        spellInfo->Attributes |= SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY;
+    });
+
     // Summon Skeletons
     ApplySpellFix({ 52611, 52612 }, [](SpellInfo* spellInfo)
     {
@@ -3223,7 +3220,8 @@ void SpellMgr::LoadSpellInfoCorrections()
 
     ApplySpellFix({
         42818, // Headless Horseman - Wisp Flight Port
-        42821  // Headless Horseman - Wisp Flight Missile
+        42821, // Headless Horseman - Wisp Flight Missile
+        17678  // Despawn Spectral Combatants
     }, [](SpellInfo* spellInfo)
     {
         spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(6); // 100 yards
@@ -3392,7 +3390,8 @@ void SpellMgr::LoadSpellInfoCorrections()
     });
 
     ApplySpellFix({
-        36384  // Skartax Purple Beam
+        36384, // Skartax Purple Beam
+        47731  // Critter
     }, [](SpellInfo* spellInfo)
     {
         spellInfo->MaxAffectedTargets = 2;
@@ -3440,18 +3439,12 @@ void SpellMgr::LoadSpellInfoCorrections()
     });
 
     ApplySpellFix({
-        54835  // Curse of the Plaguebringer - Noth (H)
-    }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->MaxAffectedTargets = 8;
-    });
-
-    ApplySpellFix({
         40827, // Sinful Beam
         40859, // Sinister Beam
         40860, // Vile Beam
         40861, // Wicked Beam
-        54098  // Poison Bolt Volly - Faerlina (H)
+        54098, // Poison Bolt Volly - Faerlina (H)
+        54835  // Curse of the Plaguebringer - Noth (H)
     }, [](SpellInfo* spellInfo)
     {
         spellInfo->MaxAffectedTargets = 10;
